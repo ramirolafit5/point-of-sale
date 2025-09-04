@@ -44,6 +44,11 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Rol rol;
 
+    /* ACLARACIÓN
+     * Aca si quisiera navegar los movimientos de un usuario en particular deberia hacer el OneToMany
+     * hacia la entidad de movimiento.
+    */
+
     // Relación con la tienda
     @ManyToOne(fetch = FetchType.LAZY)  
     @JoinColumn(name = "store_id", nullable = false)  

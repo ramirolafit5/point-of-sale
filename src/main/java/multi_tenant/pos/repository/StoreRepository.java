@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 
 import multi_tenant.pos.model.Store;
 
+
 @Repository
 public interface StoreRepository extends JpaRepository<Store, Long>{
-    
 }

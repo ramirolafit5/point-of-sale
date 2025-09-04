@@ -7,38 +7,39 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
-import multi_tenant.pos.model.enums.SaleStatus;
 
 @Data
+@Table(name = "registro_caja")
 @Entity
-@Table(name = "sales")
-public class Sale {
+public class CashRegister {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Fecha y hora de la venta
     @Column(nullable = false)
-    private LocalDateTime date;
+    private BigDecimal currentBalance = BigDecimal.ZERO;
 
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime openedAt = LocalDateTime.now();
+
+    private LocalDateTime closedAt;
+
     @Column(nullable = false)
-    private SaleStatus status = SaleStatus.PENDING;
+    private Boolean active = true;
 
-    // Total de la venta
-    @Column(nullable = false)
-    private BigDecimal totalAmount;
+    @ManyToOne
+    @JoinColumn(name = "store_id", nullable = false)
+    private Store store;
 
-    // Productos vendidos (detalle de la venta)
-    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SaleItem> items;
+    @OneToMany(mappedBy = "cashRegister", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Movement> movements;
 }

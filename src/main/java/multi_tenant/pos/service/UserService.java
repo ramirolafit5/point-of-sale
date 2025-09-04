@@ -142,4 +142,17 @@ public class UserService implements UserDetailsService {
 
         return userMapper.toDTO(usuario);
     }
+
+    public User getCurrentUser() {
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        if (username == null || username.equals("anonymousUser")) {
+            throw new UnauthorizedException("No hay un usuario autenticado");
+        }
+
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
 }

@@ -74,6 +74,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                     .requestMatchers(HttpMethod.POST, "/api/autenticacion/registro").permitAll() //aca va a ir rol de admin pero por el momento lo dejo asi
                     .requestMatchers(HttpMethod.POST, "/api/autenticacion/login").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/store/create").permitAll()
+                    .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/autenticacion/me").hasAnyRole("USER", "ADMIN")
                     .requestMatchers(HttpMethod.POST,"/api/productos/**").hasAnyRole("USER", "ADMIN")
                     .requestMatchers(HttpMethod.POST, "/api/pedidos/**").hasAnyRole("USER", "ADMIN")

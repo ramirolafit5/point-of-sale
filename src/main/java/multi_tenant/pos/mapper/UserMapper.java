@@ -30,7 +30,7 @@ public interface UserMapper {
      * Explicacion similar a la anterior
      */
     @Mapping(source = "rol", target = "rol", qualifiedByName = "rolToString")
-    @Mapping(target = "token", ignore = true) // <--- Esta es la línea clave
+    @Mapping(target = "token", ignore = true)
     UserTokenDTO toUserTokenDTO(User user);
 
     @Named("rolToString") // <-- Aquí se define el nombre del método
