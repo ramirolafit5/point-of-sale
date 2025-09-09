@@ -9,22 +9,17 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import multi_tenant.pos.model.enums.SaleStatus;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "sales")
-public class Sale {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Sale extends Movement {
 
     // Fecha y hora de la venta
     @Column(nullable = false)
@@ -41,4 +36,12 @@ public class Sale {
     // Productos vendidos (detalle de la venta)
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SaleItem> items;
+
+    @Override
+    public void impactCashRegister() {
+        // Sumar el total de la venta al balance de la caja
+/*         this.getCashRegister().setBalance(
+            this.getCashRegister().getBalance().add(this.getTotalAmount())
+        ); */
+    }
 }

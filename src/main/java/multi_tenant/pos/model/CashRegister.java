@@ -26,7 +26,7 @@ public class CashRegister {
     private Long id;
 
     @Column(nullable = false)
-    private BigDecimal currentBalance = BigDecimal.ZERO;
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime openedAt = LocalDateTime.now();
