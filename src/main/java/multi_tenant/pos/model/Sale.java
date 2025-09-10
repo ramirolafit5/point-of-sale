@@ -2,6 +2,7 @@ package multi_tenant.pos.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -31,11 +32,11 @@ public class Sale extends Movement {
 
     // Total de la venta
     @Column(nullable = false)
-    private BigDecimal totalAmount;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
 
     // Productos vendidos (detalle de la venta)
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SaleItem> items;
+    private List<SaleItem> items = new ArrayList<>();
 
     @Override
     public void impactCashRegister() {
@@ -44,4 +45,14 @@ public class Sale extends Movement {
             this.getCashRegister().getBalance().add(this.getTotalAmount())
         ); */
     }
+
+    public BigDecimal calculateTotal() {
+        if (items == null || items.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return items.stream()
+                    .map(SaleItem::getSubtotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
 }

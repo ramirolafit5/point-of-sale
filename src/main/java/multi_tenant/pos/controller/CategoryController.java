@@ -28,16 +28,16 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<CategoryResponseDTO> createProduct(@Valid @RequestBody CreateCategoryRequestDTO dto) {
+    @PostMapping
+    public ResponseEntity<CategoryResponseDTO> createCategory(@Valid @RequestBody CreateCategoryRequestDTO dto) {
         CategoryResponseDTO response = categoryService.createCategory(dto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<CategoryResponseDTO>> getCategories() {
-        List<CategoryResponseDTO> products = categoryService.getCategoriesOfCurrentUserStore();
-        return ResponseEntity.ok(products);
+        List<CategoryResponseDTO> categories = categoryService.getAllCategories();
+        return ResponseEntity.ok(categories);
     }
 
     @GetMapping("/{id}")
@@ -53,7 +53,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryResponseDTO> updateProduct(@PathVariable Long id,@Valid @RequestBody UpdateCategoryRequestDTO dto) {
+    public ResponseEntity<CategoryResponseDTO> updateCategory(@PathVariable Long id,@Valid @RequestBody UpdateCategoryRequestDTO dto) {
         CategoryResponseDTO updatedCategory = categoryService.updateCategory(id, dto);
         return ResponseEntity.ok(updatedCategory);
     }

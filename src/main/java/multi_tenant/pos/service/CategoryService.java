@@ -3,13 +3,13 @@ package multi_tenant.pos.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.Transactional;
 import multi_tenant.pos.dto.Category.CategoryResponseDTO;
 import multi_tenant.pos.dto.Category.CreateCategoryRequestDTO;
 import multi_tenant.pos.dto.Category.UpdateCategoryRequestDTO;
+import multi_tenant.pos.handler.ConflictException;
 import multi_tenant.pos.handler.ResourceNotFoundException;
-import multi_tenant.pos.handler.UnauthorizedException;
 import multi_tenant.pos.mapper.CategoryMapper;
 import multi_tenant.pos.model.Category;
 import multi_tenant.pos.model.User;
@@ -28,62 +28,77 @@ public class CategoryService {
         this.userService = userService;
     }
 
+    @Transactional
     public CategoryResponseDTO createCategory(CreateCategoryRequestDTO dto) {
-        User currentUser = userService.getCurrentUser();
+        Long storeId = getCurrentUserStoreId();
 
+        // Validar que no exista otra categoria con el mismo nombre en la tienda
+        boolean exists = categoryRepository.existsByNameAndStoreId(dto.getName(), storeId);
+        if (exists) {
+            throw new IllegalArgumentException("Ya existe una categoria con ese nombre en tu tienda");
+        }
+
+        // Crear la entidad y asociar a la tienda actual
         Category category = categoryMapper.toEntity(dto);
-        category.setStore(currentUser.getStore());
+        category.setStore(getCurrentUser().getStore());
 
+        // Guardar
         Category saved = categoryRepository.save(category);
 
         return categoryMapper.toDTO(saved);
     }
 
-    public List<CategoryResponseDTO> getCategoriesOfCurrentUserStore() {
-        User currentUser = userService.getCurrentUser(); // devuelve la entidad User
-        Long storeId = currentUser.getStore().getId();  // sacamos la store asociada
+    @Transactional(readOnly = true)
+    public List<CategoryResponseDTO> getAllCategories() {
+        Long storeId = getCurrentUserStoreId();
 
         List<Category> categories = categoryRepository.findByStoreIdOrderByIdAsc(storeId);
+
         return categories.stream()
-                       .map(categoryMapper::toDTO)
-                       .toList();
+                        .map(categoryMapper::toDTO)
+                        .toList();
     }
 
-    public CategoryResponseDTO getCategoryById(Long categoryId) {
-        User currentUser = userService.getCurrentUser();
-        Long storeId = currentUser.getStore().getId();
 
-        //Directamente con la consulta esa verifica que ese producto pertenezca a la bdd
+    @Transactional(readOnly = true)
+    public CategoryResponseDTO getCategoryById(Long categoryId) {
+        Long storeId = getCurrentUserStoreId();
+
+        // Busca la categoria segun el id de categoria y id de tienda
         Category category = categoryRepository.findByIdAndStoreId(categoryId, storeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada o no pertenece a tu tienda"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada"));
 
         return categoryMapper.toDTO(category);
     }
 
     @Transactional
-    public void deleteCategory(Long id) {
-        User currentUser = userService.getCurrentUser();
-        Long storeId = currentUser.getStore().getId();
+    public void deleteCategory(Long categoryId) {
+        Long storeId = getCurrentUserStoreId();
 
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrado"));
+        // Busca la categoria segun el id de categoria y id de tienda
+        Category category = categoryRepository.findByIdAndStoreId(categoryId, storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada"));
 
-        // Validar que la categoria sea de la tienda del usuario logueado
-        if (!category.getStore().getId().equals(storeId)) {
-            throw new UnauthorizedException("No existe esta categoria en tu tienda");
-        }
-
+        category.getStore().getCategories().remove(category);
+        
         categoryRepository.delete(category);
     }
 
     @Transactional
     public CategoryResponseDTO updateCategory(Long categoryId, UpdateCategoryRequestDTO dto) {
-        User currentUser = userService.getCurrentUser();
-        Long storeId = currentUser.getStore().getId();
+        Long storeId = getCurrentUserStoreId();
 
         // Buscamos la categoria, asegurando que sea de la tienda del usuario
         Category category = categoryRepository.findByIdAndStoreId(categoryId, storeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria no encontrada"));
+
+        // Validación extra: evitar nombres duplicados dentro de la misma tienda
+        if (dto.getName() != null && !dto.getName().equalsIgnoreCase(category.getName())) {
+            boolean exists = categoryRepository.existsByNameIgnoreCaseAndStoreId(dto.getName(), storeId);
+            if (exists) {
+                throw new ConflictException("Ya existe una categoria con ese nombre en tu tienda");
+            }
+        }
 
         // Usamos el mapper
         categoryMapper.updateEntityFromDto(dto, category);
@@ -92,5 +107,15 @@ public class CategoryService {
         Category updatedCategory = categoryRepository.save(category);
 
         return categoryMapper.toDTO(updatedCategory);
+    }
+
+    // Metodos privados reutilizables
+
+    private Long getCurrentUserStoreId() {
+        return userService.getCurrentUser().getStore().getId();
+    }
+
+    private User getCurrentUser() {
+        return userService.getCurrentUser();
     }
 }
