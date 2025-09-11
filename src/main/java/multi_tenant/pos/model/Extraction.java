@@ -6,7 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import multi_tenant.pos.handler.ConflictException;
+import multi_tenant.pos.handler.DuplicateResourceException;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -20,7 +20,7 @@ public class Extraction extends Movement {
     public void impactCashRegister() {
         BigDecimal balance = getCashRegister().getBalance();
         if (getAmount().compareTo(balance) > 0) {
-            throw new ConflictException("El monto excede el balance de la caja");
+            throw new DuplicateResourceException("El monto excede el balance de la caja");
         }
         getCashRegister().setBalance(balance.subtract(getAmount()));
     }

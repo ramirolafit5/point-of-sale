@@ -29,7 +29,7 @@ public class ProductController {
         this.productService = productService;
     }
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<ProductResponseDTO> createProduct(@Valid @RequestBody CreateProductRequestDTO request) {
         ProductResponseDTO response = productService.createProduct(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -37,7 +37,7 @@ public class ProductController {
     
     @GetMapping
     public ResponseEntity<List<ProductResponseDTO>> getProductsOfCurrentUserStore() {
-        List<ProductResponseDTO> products = productService.getProductsOfCurrentUserStore();
+        List<ProductResponseDTO> products = productService.getAllProducts();
         return ResponseEntity.ok(products);
     }
 

@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import multi_tenant.pos.dto.Category.CategoryResponseDTO;
 import multi_tenant.pos.dto.Category.CreateCategoryRequestDTO;
 import multi_tenant.pos.dto.Category.UpdateCategoryRequestDTO;
-import multi_tenant.pos.handler.ConflictException;
+import multi_tenant.pos.handler.DuplicateResourceException;
 import multi_tenant.pos.handler.ResourceNotFoundException;
 import multi_tenant.pos.mapper.CategoryMapper;
 import multi_tenant.pos.model.Category;
@@ -54,6 +54,10 @@ public class CategoryService {
 
         List<Category> categories = categoryRepository.findByStoreIdOrderByIdAsc(storeId);
 
+        if (categories.isEmpty()) {
+            throw new ResourceNotFoundException("No hay categorias en tu tienda");
+        }
+
         return categories.stream()
                         .map(categoryMapper::toDTO)
                         .toList();
@@ -96,7 +100,7 @@ public class CategoryService {
         if (dto.getName() != null && !dto.getName().equalsIgnoreCase(category.getName())) {
             boolean exists = categoryRepository.existsByNameIgnoreCaseAndStoreId(dto.getName(), storeId);
             if (exists) {
-                throw new ConflictException("Ya existe una categoria con ese nombre en tu tienda");
+                throw new DuplicateResourceException("Ya existe una categoria con ese nombre en tu tienda");
             }
         }
 

@@ -17,7 +17,7 @@ import multi_tenant.pos.dto.AuthenticationRequestDTO;
 import multi_tenant.pos.dto.RegisterUserDTO;
 import multi_tenant.pos.dto.UserDTO;
 import multi_tenant.pos.dto.UserTokenDTO;
-import multi_tenant.pos.handler.ConflictException;
+import multi_tenant.pos.handler.DuplicateResourceException;
 import multi_tenant.pos.handler.ResourceNotFoundException;
 import multi_tenant.pos.handler.UnauthorizedException;
 import multi_tenant.pos.mapper.UserMapper;
@@ -115,7 +115,7 @@ public class UserService implements UserDetailsService {
         .orElseThrow(() -> new ResourceNotFoundException("Tienda no encontrada"));
 
         if (userRepository.existsByUsername(registroDTO.getUsername())) {
-            throw new ConflictException("El nombre de usuario '" + registroDTO.getUsername() + "' ya está en uso.");
+            throw new DuplicateResourceException("El nombre de usuario '" + registroDTO.getUsername() + "' ya está en uso.");
         }
 
         User user = userMapper.fromDTO(registroDTO);          // Convierte DTO → entidad

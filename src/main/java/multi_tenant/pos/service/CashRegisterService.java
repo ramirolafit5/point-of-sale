@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import multi_tenant.pos.dto.CashRegisterD.CashRegisterDTO;
-import multi_tenant.pos.handler.ConflictException;
+import multi_tenant.pos.handler.DuplicateResourceException;
 import multi_tenant.pos.mapper.CashRegisterMapper;
 import multi_tenant.pos.model.CashRegister;
 import multi_tenant.pos.model.Store;
@@ -34,7 +34,7 @@ public class CashRegisterService {
         // Verificar si ya existe una caja activa para la tienda
         CashRegister cajaActiva = cashRegisterRepository.findByStoreIdAndActiveTrue(store.getId());
         if (cajaActiva != null) {
-            throw new ConflictException("Ya existe una caja abierta para esta tienda");
+            throw new DuplicateResourceException("Ya existe una caja abierta para esta tienda");
         }
 
         // Crear la caja con valores iniciales
@@ -56,7 +56,7 @@ public class CashRegisterService {
         // Buscar la caja activa
         CashRegister cajaActiva = cashRegisterRepository.findByStoreIdAndActiveTrue(store.getId());
         if (cajaActiva == null) {
-            throw new ConflictException("No hay ninguna caja abierta para esta tienda");
+            throw new DuplicateResourceException("No hay ninguna caja abierta para esta tienda");
         }
 
         // Cerrar la caja

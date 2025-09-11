@@ -10,7 +10,7 @@ import jakarta.transaction.Transactional;
 import multi_tenant.pos.dto.Sale.SaleItemRequestDTO;
 import multi_tenant.pos.dto.Sale.SaleItemResponseDTO;
 import multi_tenant.pos.dto.Sale.SaleResponseDTO;
-import multi_tenant.pos.handler.ConflictException;
+import multi_tenant.pos.handler.DuplicateResourceException;
 import multi_tenant.pos.handler.ResourceNotFoundException;
 import multi_tenant.pos.mapper.SaleMapper;
 import multi_tenant.pos.model.CashRegister;
@@ -61,7 +61,7 @@ public class SaleService {
         );
 
         if (pendingSale.isPresent()) {
-            throw new ConflictException("Ya existe una venta pendiente. Confirme o cancele antes de crear otra.");
+            throw new DuplicateResourceException("Ya existe una venta pendiente. Confirme o cancele antes de crear otra.");
         }
 
         // Crear nueva venta

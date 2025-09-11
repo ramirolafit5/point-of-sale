@@ -21,8 +21,8 @@ public class GlobalExceptionHandler {
         return buildResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(ConflictException.class) // 409
-    public ResponseEntity<Map<String, String>> handleConflict(ConflictException ex) {
+    @ExceptionHandler(DuplicateResourceException.class) // 409
+    public ResponseEntity<Map<String, String>> handleConflict(DuplicateResourceException ex) {
         return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class) // 500 genérico
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
-        ex.printStackTrace(); // me sirvió para ver error en consola
+        /* ex.printStackTrace(); */ // me sirvió para ver error en consola
         return buildResponse("Ocurrió un error inesperado.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 

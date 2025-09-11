@@ -8,7 +8,7 @@ import multi_tenant.pos.dto.Movement.DepositResponseDTO;
 import multi_tenant.pos.dto.Movement.ExtractionRequestDTO;
 import multi_tenant.pos.dto.Movement.ExtractionResponseDTO;
 import multi_tenant.pos.handler.BadRequestException;
-import multi_tenant.pos.handler.ConflictException;
+import multi_tenant.pos.handler.DuplicateResourceException;
 import multi_tenant.pos.mapper.DepositMapper;
 import multi_tenant.pos.mapper.ExtractionMapper;
 import multi_tenant.pos.model.CashRegister;
@@ -43,7 +43,7 @@ public class MovementService {
 
         CashRegister caja = cashRegisterRepository.findByStoreIdAndActiveTrue(store.getId());
         if (caja == null) {
-            throw new ConflictException("No hay caja activa para la tienda");
+            throw new DuplicateResourceException("No hay caja activa para la tienda");
         }
 
         /* Usamos compare prq estamos usando bigdecimal para el ingreso de los datos en el dto */
@@ -69,7 +69,7 @@ public class MovementService {
 
         CashRegister caja = cashRegisterRepository.findByStoreIdAndActiveTrue(store.getId());
         if (caja == null) {
-            throw new ConflictException("No hay caja activa para la tienda");
+            throw new DuplicateResourceException("No hay caja activa para la tienda");
         }
 
         Deposit deposit = depositMapper.toEntity(dto);

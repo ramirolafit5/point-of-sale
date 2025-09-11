@@ -4,14 +4,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import multi_tenant.pos.dto.Product.CreateProductRequestDTO;
 import multi_tenant.pos.dto.Product.ProductResponseDTO;
 import multi_tenant.pos.dto.Product.UpdateProductRequestDTO;
 import multi_tenant.pos.handler.ResourceNotFoundException;
-import multi_tenant.pos.handler.UnauthorizedException;
 import multi_tenant.pos.mapper.ProductMapper;
 import multi_tenant.pos.model.Category;
 import multi_tenant.pos.model.Product;
@@ -36,16 +35,21 @@ public class ProductService {
 
     @Transactional
     public ProductResponseDTO createProduct(CreateProductRequestDTO dto) {
-        // Obtener usuario logueado
-        User currentUser = userService.getCurrentUser(); // versión que devuelve User
+        Long storeId = getCurrentUserStoreId();
+
+        // Validar que no exista otro producto con el mismo nombre en la misma tienda
+        boolean exists = productRepository.existsByNameAndStoreId(dto.getName(), storeId);
+        if (exists) {
+            throw new IllegalArgumentException("Ya existe un producto con ese nombre en tu tienda");
+        }
 
         // Crear producto y asociar tienda automáticamente
         Product product = productMapper.toEntity(dto);
-        product.setStore(currentUser.getStore());
+        product.setStore(getCurrentUser().getStore());
 
-        // Buscar categoria asociada al producto y 
+        // Buscar categoría asociada al producto
         Category category = categoryRepository.findById(dto.getCategory())
-            .orElseThrow(() -> new EntityNotFoundException("Categoría no encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Categoría no encontrada"));
         product.setCategory(category);
 
         // Guardar en DB
@@ -55,67 +59,84 @@ public class ProductService {
         return productMapper.toDTO(saved);
     }
 
-    public List<ProductResponseDTO> getProductsOfCurrentUserStore() {
-        User currentUser = userService.getCurrentUser(); // devuelve la entidad User
-        Long storeId = currentUser.getStore().getId();  // sacamos la store asociada
+
+    @Transactional(readOnly = true)
+    public List<ProductResponseDTO> getAllProducts() {
+        Long storeId = getCurrentUserStoreId();
 
         List<Product> products = productRepository.findByStoreIdOrderByIdAsc(storeId);
+
+        if (products.isEmpty()) {
+            throw new ResourceNotFoundException("No hay productos en tu tienda");
+        }
+
         return products.stream()
-                       .map(productMapper::toDTO)
-                       .toList();
+                    .map(productMapper::toDTO)
+                    .toList();
     }
 
+    @Transactional(readOnly = true)
     public ProductResponseDTO getProductById(Long productId) {
-        User currentUser = userService.getCurrentUser();
-        Long storeId = currentUser.getStore().getId();
+        Long storeId = getCurrentUserStoreId();
 
-        //Directamente con la consulta esa verifica que ese producto pertenezca a la bdd
         Product product = productRepository.findByIdAndStoreId(productId, storeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado o no pertenece a tu tienda"));
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
         return productMapper.toDTO(product);
     }
 
     @Transactional
     public ProductResponseDTO updateProduct(Long productId, UpdateProductRequestDTO dto) {
-        User currentUser = userService.getCurrentUser();
-        Long storeId = currentUser.getStore().getId();
+        Long storeId = getCurrentUserStoreId();
 
-        // Buscamos el producto, asegurando que sea de la tienda del usuario
+        // 1. Buscar el producto asegurando que pertenezca a la tienda del usuario
         Product product = productRepository.findByIdAndStoreId(productId, storeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
-        // Usamos el mapper
+        // 2. Validar que no exista otro producto con el mismo nombre en la tienda
+        boolean exists = productRepository.existsByNameAndStoreIdAndIdNot(dto.getName(), storeId, productId);
+        if (exists) {
+            throw new IllegalArgumentException("Ya existe otro producto con ese nombre en tu tienda");
+        }
+
+        // 3. Mapear los datos del DTO al producto
         productMapper.updateEntityFromDto(dto, product);
 
+        // 4. Actualizar la categoría
         Category category = categoryRepository.findById(dto.getCategory())
-            .orElseThrow(() -> new EntityNotFoundException("Categoría no encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Categoría no encontrada"));
         product.setCategory(category);
 
-
-        // Actualizamos la fecha de modificación
+        // 5. Actualizar la fecha de modificación
         product.setUpdatedAt(LocalDateTime.now());
 
-        // Guardamos
+        // 6. Guardar los cambios
         Product updatedProduct = productRepository.save(product);
 
+        // 7. Devolver el DTO
         return productMapper.toDTO(updatedProduct);
     }
 
     @Transactional
-    public void deleteProduct(Long id) {
-        User currentUser = userService.getCurrentUser();
-        Long storeId = currentUser.getStore().getId();
+    public void deleteProduct(Long productId) {
+        Long storeId = getCurrentUserStoreId();
 
-        Product product = productRepository.findById(id)
+        // Buscar producto asegurando que pertenezca a la tienda del usuario
+        Product product = productRepository.findByIdAndStoreId(productId, storeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
-        // Validar que el producto sea de la tienda del usuario logueado
-        if (!product.getStore().getId().equals(storeId)) {
-            throw new UnauthorizedException("No existe este producto en tu tienda");
-        }
-
+        product.getStore().getProducts().remove(product);
+        
         productRepository.delete(product);
     }
 
+    // Metodos privados para ser reutilizados
+
+    private Long getCurrentUserStoreId() {
+        return userService.getCurrentUser().getStore().getId();
+    }
+
+    private User getCurrentUser() {
+        return userService.getCurrentUser();
+    }
 }

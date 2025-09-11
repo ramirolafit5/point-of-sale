@@ -7,7 +7,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
@@ -27,6 +26,7 @@ import lombok.Data;
 @Table(name = "productos")
 @EntityListeners(AuditingEntityListener.class)
 public class Product {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,7 +37,6 @@ public class Product {
     @Size(max = 200, message = "La descripción no puede superar 200 caracteres")
     private String description;
 
-    @Column(unique = true)
     private String sku;
 
     @PositiveOrZero(message = "El precio debe ser mayor o igual a 0")
@@ -54,11 +53,11 @@ public class Product {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 }
