@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityNotFoundException;
+import multi_tenant.pos.dto.Product.AddStockRequestDTO;
 import multi_tenant.pos.dto.Product.CreateProductRequestDTO;
 import multi_tenant.pos.dto.Product.ProductResponseDTO;
 import multi_tenant.pos.dto.Product.UpdateProductRequestDTO;
@@ -128,6 +129,55 @@ public class ProductService {
         product.getStore().getProducts().remove(product);
         
         productRepository.delete(product);
+    }
+
+    @Transactional
+    public ProductResponseDTO addStock (Long productId, AddStockRequestDTO dto){
+        Long storeId = getCurrentUserStoreId();
+
+        // 1. Buscar el producto asegurando que pertenezca a la tienda del usuario
+        Product product = productRepository.findByIdAndStoreId(productId, storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+
+        // 2. Mapear los datos del DTO al producto
+        productMapper.stockToEntity(dto);
+
+        // 3. Actualizar la fecha de modificación
+        product.setUpdatedAt(LocalDateTime.now());
+
+        product.setQuantity(product.getQuantity() + dto.getQuantity());
+
+        // 4. Guardar los cambios
+        Product updatedProduct = productRepository.save(product);
+
+        // 5. Devolver el DTO
+        return productMapper.toDTO(updatedProduct);
+    }
+
+    @Transactional
+    public ProductResponseDTO removeStock (Long productId, AddStockRequestDTO dto){
+        Long storeId = getCurrentUserStoreId();
+
+        // 1. Buscar el producto asegurando que pertenezca a la tienda del usuario
+        Product product = productRepository.findByIdAndStoreId(productId, storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+
+        // 2. Mapear los datos del DTO al producto
+        productMapper.stockToEntity(dto);
+
+        // 3. Actualizar la fecha de modificación
+        product.setUpdatedAt(LocalDateTime.now());
+
+        if (dto.getQuantity() > product.getQuantity()) {
+            throw new ResourceNotFoundException("No es posible retirar mas unidades de las que hay en stock");
+        }
+        product.setQuantity(product.getQuantity() - dto.getQuantity());
+
+        // 4. Guardar los cambios
+        Product updatedProduct = productRepository.save(product);
+
+        // 5. Devolver el DTO
+        return productMapper.toDTO(updatedProduct);
     }
 
     // Metodos privados para ser reutilizados

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import multi_tenant.pos.dto.Product.AddStockRequestDTO;
 import multi_tenant.pos.dto.Product.CreateProductRequestDTO;
 import multi_tenant.pos.dto.Product.ProductResponseDTO;
 import multi_tenant.pos.dto.Product.UpdateProductRequestDTO;
@@ -56,6 +57,18 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> updateProduct(@PathVariable Long id,@Valid @RequestBody UpdateProductRequestDTO dto) {
         ProductResponseDTO updatedProduct = productService.updateProduct(id, dto);
+        return ResponseEntity.ok(updatedProduct);
+    }
+
+    @PutMapping("/{id}/agregarStock")
+    public ResponseEntity<ProductResponseDTO> addStock(@PathVariable Long id,@Valid @RequestBody AddStockRequestDTO dto) {
+        ProductResponseDTO updatedProduct = productService.addStock(id, dto);
+        return ResponseEntity.ok(updatedProduct);
+    }
+
+    @PutMapping("/{id}/quitarStock")
+    public ResponseEntity<ProductResponseDTO> removeStock(@PathVariable Long id,@Valid @RequestBody AddStockRequestDTO dto) {
+        ProductResponseDTO updatedProduct = productService.removeStock(id, dto);
         return ResponseEntity.ok(updatedProduct);
     }
 }

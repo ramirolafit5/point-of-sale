@@ -5,6 +5,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
+import multi_tenant.pos.dto.Product.AddStockRequestDTO;
 import multi_tenant.pos.dto.Product.CreateProductRequestDTO;
 import multi_tenant.pos.dto.Product.ProductResponseDTO;
 import multi_tenant.pos.dto.Product.UpdateProductRequestDTO;
@@ -51,4 +52,17 @@ public interface ProductMapper {
     @Mapping(target = "price", source = "price")
     @Mapping(target = "active", source = "active")
     void updateEntityFromDto(UpdateProductRequestDTO dto, @MappingTarget Product product);
+
+    /* aca uso la forma de category (mas sencilla a mi gusto) */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "name", ignore = true)
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "sku", ignore = true)
+    @Mapping(target = "price", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "store", ignore = true)
+    @Mapping(target = "category", ignore = true)
+    Product stockToEntity(AddStockRequestDTO dto);
 }
