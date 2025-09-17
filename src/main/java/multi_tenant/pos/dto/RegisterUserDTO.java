@@ -18,5 +18,4 @@ public class RegisterUserDTO {
     private Rol rol;
     @NotNull(message = "storeId no puede ser nulo")
     private Long storeId;
-
 }

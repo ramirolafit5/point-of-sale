@@ -1,6 +1,7 @@
 package multi_tenant.pos.service;
 
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -52,11 +53,10 @@ public class UserService implements UserDetailsService {
         this.userMapper = userMapper;
     }
 
-    /**
-     * Metodo para autenticar y generar un token
-      */
+    @Transactional
     public UserTokenDTO autenticarYGenerarToken(AuthenticationRequestDTO requestDTO) {
         try {
+            // Spring Security se encarga de validar username y password
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             requestDTO.getUsername(),
@@ -64,35 +64,24 @@ public class UserService implements UserDetailsService {
                     )
             );
 
-            // Obtener el usuario autenticado directamente del Authentication
+            // Obtenemos el usuario autenticado
             User usuario = (User) auth.getPrincipal();
 
-            // Construir DTO
-            UserTokenDTO userTokenDTO = buildUserTokenDTO(usuario);
+            // Mapeamos entidad → DTO (rol enum → String)
+            UserTokenDTO userTokenDTO = userMapper.toUserTokenDTO(usuario);
 
-            // Generar token JWT
+            // Generamos el JWT y lo asignamos al DTO
             String token = jwtUtil.generateToken(userTokenDTO);
             userTokenDTO.setToken(token);
 
             return userTokenDTO;
 
         } catch (BadCredentialsException ex) {
+            // Usuario o contraseña incorrectos
             throw new UnauthorizedException("Usuario o contraseña incorrectos");
         }
     }
 
-
-    private UserTokenDTO buildUserTokenDTO(User usuario) {
-        UserTokenDTO dto = new UserTokenDTO();
-        dto.setId(usuario.getId());
-        dto.setUsername(usuario.getUsername());
-        dto.setRol(usuario.getRol().name()); // Enum convertido a String
-        return dto;
-    }
-
-    /**
-     * Metodo para 
-      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User usuario = userRepository.findByUsername(username)
@@ -100,33 +89,70 @@ public class UserService implements UserDetailsService {
         return usuario;
     }
 
-    /**
-     * Metodo para registrar un nuevo usuario (movido desde AuthService)
-     */
     @Transactional
     public UserDTO registrarUsuario(RegisterUserDTO registroDTO) {
-        // Obtener el usuario autenticado actual y sus roles
-        Authentication authUser = SecurityContextHolder.getContext().getAuthentication();
-        if (authUser == null || !authUser.isAuthenticated()) {
-            throw new UnauthorizedException("No estás autenticado para realizar esta acción.");
-        }
+        /* User currentUser = getCurrentUser();
+
+        if (currentUser.getRol() != Rol.ADMIN) {
+            throw new UnauthorizedException("No tienes permisos para crear usuarios.");
+        } */
 
         Store store = storeRepository.findById(registroDTO.getStoreId())
-        .orElseThrow(() -> new ResourceNotFoundException("Tienda no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tienda no encontrada"));
 
         if (userRepository.existsByUsername(registroDTO.getUsername())) {
-            throw new DuplicateResourceException("El nombre de usuario '" + registroDTO.getUsername() + "' ya está en uso.");
+            throw new DuplicateResourceException("El nombre de usuario ya está en uso.");
         }
 
-        User user = userMapper.fromDTO(registroDTO);          // Convierte DTO → entidad
-        user.setPassword(passwordEncoder.encode(registroDTO.getPassword())); // Encode de password
+        User user = userMapper.fromDTO(registroDTO);
+        user.setPassword(passwordEncoder.encode(registroDTO.getPassword()));
         user.setStore(store);
-        User savedUser = userRepository.save(user);   // Guarda en BD
 
-        return userMapper.toDTO(savedUser);           // Convierte entidad → DTO para response
+        User savedUser = userRepository.save(user);
+        return userMapper.toDTO(savedUser);
     }
 
+    // Devuelve la entidad completa
+    public User getCurrentUser() {
+        return fetchAuthenticatedUser();
+    }
+
+    // Devuelve un DTO para exponer al front-end
     public UserDTO obtenerUsuarioAutenticado() {
+        return userMapper.toDTO(fetchAuthenticatedUser());
+    }
+
+    // Metodo privado para la busqueda del usuario autenticado
+
+    private User fetchAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+            throw new UnauthorizedException("No hay un usuario autenticado");
+        }
+
+        String username = auth.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    /* public UserDTO obtenerUsuarioAutenticado() {
         // Tomamos solo el username del SecurityContext
         String username = SecurityContextHolder.getContext()
                 .getAuthentication()
@@ -141,9 +167,9 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         return userMapper.toDTO(usuario);
-    }
+    } */
 
-    public User getCurrentUser() {
+    /*     public User getCurrentUser() {
         String username = SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getName();
@@ -154,5 +180,6 @@ public class UserService implements UserDetailsService {
 
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-    }
+    } */
+
 }

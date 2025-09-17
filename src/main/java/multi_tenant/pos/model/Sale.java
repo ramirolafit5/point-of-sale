@@ -30,20 +30,17 @@ public class Sale extends Movement {
     @Column(nullable = false)
     private SaleStatus status = SaleStatus.PENDING;
 
-    // Total de la venta
-    @Column(nullable = false)
-    private BigDecimal totalAmount = BigDecimal.ZERO;
-
     // Productos vendidos (detalle de la venta)
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SaleItem> items = new ArrayList<>();
 
     @Override
     public void impactCashRegister() {
-        // Sumar el total de la venta al balance de la caja
-/*         this.getCashRegister().setBalance(
-            this.getCashRegister().getBalance().add(this.getTotalAmount())
-        ); */
+        // Obtenemos la instancia de la caja registradora asociada a la venta
+        CashRegister cashRegister = this.getCashRegister();
+        
+        // Sumamos el total de la venta al balance actual de la caja
+        cashRegister.setBalance(cashRegister.getBalance().add(this.getAmount()));
     }
 
     public BigDecimal calculateTotal() {
