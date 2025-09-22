@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import multi_tenant.pos.dto.Movement.DepositRequestDTO;
 import multi_tenant.pos.dto.Movement.DepositResponseDTO;
 import multi_tenant.pos.dto.Movement.ExtractionRequestDTO;
@@ -34,21 +35,21 @@ public class MovementController {
 
     // --- Registrar una extracción ---
     @PostMapping("/extracciones")
-    public ResponseEntity<ExtractionResponseDTO> registrarExtraccion(@RequestBody ExtractionRequestDTO dto) {
+    public ResponseEntity<ExtractionResponseDTO> registrarExtraccion(@RequestBody @Valid ExtractionRequestDTO dto) {
         ExtractionResponseDTO resultado = extractService.registrarExtraccion(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
     }
 
     // --- Registrar un deposito ---
     @PostMapping("/depositos")
-    public ResponseEntity<DepositResponseDTO> registrarDeposito(@RequestBody DepositRequestDTO dto) {
+    public ResponseEntity<DepositResponseDTO> registrarDeposito(@RequestBody @Valid DepositRequestDTO dto) {
         DepositResponseDTO resultado = depositService.registrarDeposito(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
     }
 
     // Agregar un item a una venta existente
     @PostMapping("/{saleId}/items")
-    public ResponseEntity<SaleItemResponseDTO> agregarItem(@PathVariable Long saleId,@RequestBody SaleItemRequestDTO dto) {
+    public ResponseEntity<SaleItemResponseDTO> agregarItem(@PathVariable Long saleId,@RequestBody @Valid SaleItemRequestDTO dto) {
         SaleItemResponseDTO response = saleItemService.agregarItem(saleId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

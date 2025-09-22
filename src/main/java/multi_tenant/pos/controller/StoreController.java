@@ -33,7 +33,7 @@ public class StoreController {
 
     /* @PreAuthorize("hasRole('ADMIN')") */
     @PostMapping("/create")
-    public ResponseEntity<StoreResponseDTO> createProduct(@Valid @RequestBody CreateStoreDTO dto) {
+    public ResponseEntity<StoreResponseDTO> createStore(@Valid @RequestBody CreateStoreDTO dto) {
         StoreResponseDTO response = storeService.createStore(dto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -54,7 +54,7 @@ public class StoreController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{storeId}")
-    public ResponseEntity<Void> deleteStore(@PathVariable Long storeId,@RequestBody ConfirmPasswordToDeleteDTO dto) {
+    public ResponseEntity<Void> deleteStore(@PathVariable Long storeId,@RequestBody @Valid ConfirmPasswordToDeleteDTO dto) {
         storeService.deleteStore(storeId, dto);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

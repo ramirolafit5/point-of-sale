@@ -16,7 +16,7 @@ import multi_tenant.pos.dto.UserTokenDTO;
 import multi_tenant.pos.service.UserService;
 
 /**
- * Controlador para la gestión de autenticación y registro de usuarios.
+ * Controlador para la gestión de usuarios y autenticacion.
  */
 @RestController
 @RequestMapping("/api/autenticacion")
